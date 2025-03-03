@@ -1,0 +1,14 @@
+{
+    "ID": "71bc0779-fae8-4f18-bfac-7a716fd910cf",
+    "ActionKeyword": "%",
+    "IsGlobal": false,
+    "Name": "BrowserTabSearch",
+    "Author": "albertxwz",
+    "Version": "1.0.0",
+    "Language": "csharp",
+    "Website": "https://github.com/albertxwz/BrowserTabSearch",
+    "ExecuteFileName": "Community.PowerToys.Run.Plugin.BrowserTabSearch.dll",
+    "IcoPathDark": "Images\\BrowserTabSearch.dark.png",
+    "IcoPathLight": "Images\\BroserTabSearch.light.png",
+    "DynamicLoading": false
+}
