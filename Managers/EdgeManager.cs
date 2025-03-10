@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation
+﻿// Copyright (c) Microsoft Corporation
 // The Microsoft Corporation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -13,8 +13,6 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch.Managers
 {
     public class EdgeManager : IBrowserManager
     {
-        private const string EdgeClassName = "Edge_WidgetWin_1";
-
         public List<BrowserTab> GetAllTabs()
         {
             var tabs = new List<BrowserTab>();
@@ -32,7 +30,9 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch.Managers
 
                     var tabElements = element.FindAll(
                         TreeScope.Descendants,
-                        new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.TabItem));
+                        new AndCondition(
+                            new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.TabItem),
+                            new PropertyCondition(AutomationElement.ClassNameProperty, "EdgeTab")));
 
                     foreach (AutomationElement tabElement in tabElements)
                     {

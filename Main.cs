@@ -4,7 +4,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using Community.PowerToys.Run.Plugin.BrowserTabSearch.Interfaces;
@@ -12,6 +14,7 @@ using Community.PowerToys.Run.Plugin.BrowserTabSearch.Managers;
 using Community.PowerToys.Run.Plugin.BrowserTabSearch.Models;
 using Community.PowerToys.Run.Plugin.BrowserTabSearch.Properties;
 using ManagedCommon;
+using Microsoft.International.Converters.PinYinConverter;
 using Microsoft.PowerToys.Settings.UI.Library;
 using Wox.Infrastructure;
 using Wox.Plugin;
@@ -20,6 +23,8 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch
 {
     public class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider, IReloadable, IDisposable, IDelayedExecutionPlugin
     {
+        private CancellationTokenSource _cancellationTokenSource = new();
+
         // private const string Setting = nameof(Setting);
 
         // current value of the setting
@@ -44,7 +49,7 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch
                 DisplayLabel = "Maximum number of results",
                 DisplayDescription = "Maximum number of results to show. Set to -1 to show all (may decrease performance)",
                 PluginOptionType = PluginAdditionalOption.AdditionalOptionType.Numberbox,
-                NumberValue = 5,
+                NumberValue = -1,
             },
         };
 
@@ -54,7 +59,7 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch
         public void UpdateSettings(PowerLauncherPluginSettings settings)
         {
             // _setting = settings?.AdditionalOptions?.FirstOrDefault(x => x.Key == Setting)?.Value ?? false;
-            _maxResults = (int)(settings?.AdditionalOptions?.FirstOrDefault(x => x.Key == MaxResults)?.NumberValue ?? 5);
+            _maxResults = (int)(settings?.AdditionalOptions?.FirstOrDefault(x => x.Key == MaxResults)?.NumberValue ?? -1);
         }
 
         // TODO: return context menus for each Result (optional)
@@ -66,12 +71,22 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch
         // TODO: return query results
         public List<Result> Query(Query query)
         {
+            return null;
+        }
+
+        public List<Result> Query(Query query, bool delayedExecution)
+        {
+            _cancellationTokenSource?.Cancel();
+            _cancellationTokenSource = new CancellationTokenSource();
+
             ArgumentNullException.ThrowIfNull(query);
+
+            Debug.WriteLine(query.Search);
 
             // empty query
             if (string.IsNullOrEmpty(query.Search))
             {
-                return _results.Take(_maxResults).ToList();
+                return _maxResults >= 0 ? _results.Take(_maxResults).ToList() : _results;
             }
 
             var results = new List<Result>();
@@ -91,42 +106,7 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch
 
             results.Sort((x, y) => y.Score.CompareTo(x.Score));
 
-            return results.Take(_maxResults).ToList();
-        }
-
-        private int CalculateScore(string query, string title, string url)
-        {
-            // Since PT Run's FuzzySearch is too slow, and the history usually has a lot of entries,
-            // lets calculate the scores manually using a faster (but less accurate) method
-            float titleScore = title.Contains(query, StringComparison.InvariantCultureIgnoreCase)
-                ? (query.Length / (float)title.Length * 100f)
-                : 0;
-            float urlScore = url.Contains(query, StringComparison.InvariantCultureIgnoreCase)
-                ? (query.Length / (float)url.Length * 100f)
-                : 0;
-
-            float score = new[] { titleScore, urlScore }.Max();
-
-            // score += _defaultBrowser!.CalculateExtraScore(query, title, url);
-            return (int)score;
-        }
-
-        // TODO: return delayed query results (optional)
-        public List<Result> Query(Query query, bool delayedExecution)
-        {
-            return null;
-
-            // ArgumentNullException.ThrowIfNull(query);
-
-            // var results = new List<Result>();
-
-            // // empty query
-            // if (string.IsNullOrEmpty(query.Search))
-            // {
-            //      return results;
-            // }
-
-            // return results;
+            return _maxResults >= 0 ? results.Take(_maxResults).ToList() : _results;
         }
 
         private List<IBrowserManager> _managers;
@@ -172,6 +152,8 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch
                     }
                 }
             }
+
+            Debug.WriteLine(_results.Count);
         }
 
         public async Task UpdateCacheLoop()
@@ -240,6 +222,7 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch
                     _context.API.ThemeChanged -= OnThemeChanged;
                 }
 
+                _cancellationTokenSource?.Dispose();
                 _disposed = true;
             }
         }

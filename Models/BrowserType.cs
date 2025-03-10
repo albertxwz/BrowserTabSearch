@@ -7,5 +7,7 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch.Models
     public enum BrowserType
     {
         Edge,
+
+        // Chrome,
     }
 }

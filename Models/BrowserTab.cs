@@ -3,8 +3,11 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Automation;
+using System.Windows.Forms;
+using Accessibility;
 
 namespace Community.PowerToys.Run.Plugin.BrowserTabSearch.Models
 {
@@ -38,41 +41,35 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch.Models
             public System.Drawing.Rectangle RcNormalPosition;
         }
 
-        public void Activate()
+        public static bool IsWindowMinimized(IntPtr hWnd)
         {
             WINDOWPLACEMENT placement = default(WINDOWPLACEMENT);
             placement.Length = Marshal.SizeOf(placement);
-            GetWindowPlacement(WindowHandle, ref placement);
+            GetWindowPlacement(hWnd, ref placement);
+            return placement.ShowCmd == SWSHOWMINIMIZED;
+        }
 
-            if (placement.ShowCmd == SWSHOWMINIMIZED)
+        public void Activate()
+        {
+            if (IsWindowMinimized(WindowHandle))
             {
                 ShowWindow(WindowHandle, SWRESTORE);
             }
 
             SetForegroundWindow(WindowHandle);
 
-            SelectionItemPattern selectionPattern = TabElement.GetCurrentPattern(
-            SelectionItemPattern.Pattern) as SelectionItemPattern;
-            if (selectionPattern != null)
+            try
             {
-                selectionPattern.Select();
-                return;
+                SelectionItemPattern selectionPattern = TabElement.GetCurrentPattern(
+                    SelectionItemPattern.Pattern) as SelectionItemPattern;
+                selectionPattern?.Select();
             }
+            catch (InvalidOperationException ex)
+            {
+                Debug.WriteLine(ex);
 
-            // InvokePattern invokePattern = TabElement.GetCurrentPattern(InvokePattern.Pattern)
-            //    as InvokePattern;
-
-            // if (invokePattern != null)
-            // {
-            //    invokePattern.Invoke();
-            // }
-            // else
-            // {
-            //    // Fallback: Use SelectionItemPattern if the tab is part of a selection group
-            //    SelectionItemPattern selectionPattern = TabElement.GetCurrentPattern(SelectionItemPattern.Pattern)
-            //        as SelectionItemPattern;
-            //    selectionPattern?.Select();
-            // }
+                // LegacyIAccessiblePattern legacyPattern = element.GetCurrentPattern<LegacyIAccessiblePattern>(LegacyIAccessiblePattern.Pattern);
+            }
         }
 
         [DllImport("user32.dll")]

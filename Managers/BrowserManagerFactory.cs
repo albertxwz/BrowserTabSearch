@@ -14,6 +14,8 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch.Managers
             return type switch
             {
                 BrowserType.Edge => new EdgeManager(),
+
+                // BrowserType.Chrome => new ChromeManager(), // (TODO) Support Chrome
                 _ => null,
             };
         }
