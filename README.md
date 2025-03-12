@@ -12,4 +12,5 @@ We recommend building it with the [official Powertoys repo](https://github.com/m
 
 ## To-do
 - [ ] Add support for Google Chrome
-- [ ] Implement Chinese character fuzzy search with Pinyin
+- [x] Implement Chinese character fuzzy search with Pinyin
+- [ ] Add support for multiple profiles of Edge Browser
