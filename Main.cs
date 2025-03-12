@@ -5,7 +5,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
@@ -13,8 +16,9 @@ using Community.PowerToys.Run.Plugin.BrowserTabSearch.Interfaces;
 using Community.PowerToys.Run.Plugin.BrowserTabSearch.Managers;
 using Community.PowerToys.Run.Plugin.BrowserTabSearch.Models;
 using Community.PowerToys.Run.Plugin.BrowserTabSearch.Properties;
+using hyjiacan.py4n;
 using ManagedCommon;
-using Microsoft.International.Converters.PinYinConverter;
+using Microsoft.Extensions.Primitives;
 using Microsoft.PowerToys.Settings.UI.Library;
 using Wox.Infrastructure;
 using Wox.Plugin;
@@ -91,10 +95,11 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch
 
             var results = new List<Result>();
 
+            // Debug.WriteLine($"#results: {_results.Count}");
             foreach (var r in _results)
             {
-                // int score = CalculateScore(query.Search, r.Title, r.SubTitle);
-                int score = StringMatcher.FuzzySearch(query.Search, r.Title).Score;
+                // int score = StringMatcher.FuzzySearch(query.Search, r.Title).Score;
+                int score = CalculateScore(query.Search, r.Title);
                 if (score <= 0)
                 {
                     continue;
@@ -107,6 +112,46 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch
             results.Sort((x, y) => y.Score.CompareTo(x.Score));
 
             return _maxResults >= 0 ? results.Take(_maxResults).ToList() : _results;
+        }
+
+        private static bool ContainsChineseCharacters(string text)
+        {
+            return Regex.IsMatch(text, @"[\u4e00-\u9fa5]");
+        }
+
+        private static string ConvertChineseText(string text)
+        {
+            StringBuilder result = new();
+            foreach (char ch in text)
+            {
+                if (ch >= 0x4e00 && ch <= 0x9fa5)
+                {
+                    result.Append(Pinyin4Net.GetFirstPinyin(ch, PinyinFormat.WITHOUT_TONE));
+                }
+                else
+                {
+                    result.Append(ch);
+                }
+            }
+
+            return result.ToString();
+        }
+
+        private static int CalculateScore(string query, string title)
+        {
+            float titleScore = title.Contains(query, StringComparison.InvariantCultureIgnoreCase)
+                ? (query.Length / (float)title.Length * 100f)
+                : 0;
+
+            if (titleScore <= 0.0 && ContainsChineseCharacters(title) && !ContainsChineseCharacters(query))
+            {
+                string pinyinTitle = ConvertChineseText(title);
+                titleScore = pinyinTitle.Contains(query, StringComparison.InvariantCultureIgnoreCase)
+                    ? (query.Length / (float)pinyinTitle.Length * 100f)
+                    : 0;
+            }
+
+            return (int)titleScore;
         }
 
         private List<IBrowserManager> _managers;
@@ -153,7 +198,7 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch
                 }
             }
 
-            Debug.WriteLine(_results.Count);
+              // Debug.WriteLine(_results.Count);
         }
 
         public async Task UpdateCacheLoop()

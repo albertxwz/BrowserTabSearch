@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Windows.Automation;
 using Community.PowerToys.Run.Plugin.BrowserTabSearch.Interfaces;
 using Community.PowerToys.Run.Plugin.BrowserTabSearch.Models;
@@ -16,18 +17,15 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch.Managers
         public List<BrowserTab> GetAllTabs()
         {
             var tabs = new List<BrowserTab>();
-            var processes = Process.GetProcessesByName("chrome");
 
-            foreach (var process in processes)
+            AutomationElement desktop = AutomationElement.RootElement;
+
+            foreach (AutomationElement element in desktop.FindAll(
+                TreeScope.Children,
+                new PropertyCondition(AutomationElement.ClassNameProperty, "Chrome_WidgetWin_1")))
             {
                 try
                 {
-                    var element = AutomationElement.FromHandle(process.MainWindowHandle);
-                    if (element == null)
-                    {
-                        continue;
-                    }
-
                     var tabElements = element.FindAll(
                         TreeScope.Descendants,
                         new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.TabItem));
@@ -40,7 +38,7 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch.Managers
                             TabElement = tabElement,
 
                             // Title = tabElement.Current.Name,
-                            WindowHandle = process.MainWindowHandle,
+                            WindowHandle = element.Current.NativeWindowHandle,
                             BrowserType = BrowserType.Edge,
 
                             // TabId = tabElement.Current.AutomationId.GetHashCode(),

@@ -31,7 +31,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="PinYinConverterCore" />
+	  <PackageReference Include="hyjiacan.pinyin4net" />
 	</ItemGroup>
 
 	<ItemGroup>

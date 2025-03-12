@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Automation;
@@ -77,5 +78,25 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch.Models
 
         [DllImport("user32.dll")]
         private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        public static List<AutomationElement> TreeFindAll(TreeWalker walker, AutomationElement root, Func<AutomationElement, bool> condition)
+        {
+            List<AutomationElement> result = new();
+            AutomationElement element = walker.GetFirstChild(root);
+
+            while (element != null)
+            {
+                if (condition(element))
+                {
+                    result.Add(element);
+                }
+
+                result.AddRange(TreeFindAll(walker, element, condition));
+
+                element = walker.GetNextSibling(element);
+            }
+
+            return result;
+        }
     }
 }
