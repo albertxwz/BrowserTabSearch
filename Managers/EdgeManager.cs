@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Windows.Automation;
 using Community.PowerToys.Run.Plugin.BrowserTabSearch.Interfaces;
 using Community.PowerToys.Run.Plugin.BrowserTabSearch.Models;
+using Wox.Plugin.Logger;
 
 namespace Community.PowerToys.Run.Plugin.BrowserTabSearch.Managers
 {
@@ -65,8 +66,9 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch.Managers
                         });
                     }
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
+                    Log.Exception($"BrowserTabSearch Exception: {e.Message}\n", e, GetType());
                     continue;
                 }
             }

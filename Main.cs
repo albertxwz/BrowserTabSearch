@@ -5,11 +5,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using Community.PowerToys.Run.Plugin.BrowserTabSearch.Interfaces;
@@ -18,17 +16,14 @@ using Community.PowerToys.Run.Plugin.BrowserTabSearch.Models;
 using Community.PowerToys.Run.Plugin.BrowserTabSearch.Properties;
 using hyjiacan.py4n;
 using ManagedCommon;
-using Microsoft.Extensions.Primitives;
 using Microsoft.PowerToys.Settings.UI.Library;
-using Wox.Infrastructure;
 using Wox.Plugin;
+using Wox.Plugin.Logger;
 
 namespace Community.PowerToys.Run.Plugin.BrowserTabSearch
 {
-    public class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider, IReloadable, IDisposable, IDelayedExecutionPlugin
+    public class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider, IReloadable, IDisposable
     {
-        private CancellationTokenSource _cancellationTokenSource = new();
-
         // private const string Setting = nameof(Setting);
 
         // current value of the setting
@@ -75,27 +70,29 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch
         // TODO: return query results
         public List<Result> Query(Query query)
         {
-            return null;
-        }
-
-        public List<Result> Query(Query query, bool delayedExecution)
-        {
-            _cancellationTokenSource?.Cancel();
-            _cancellationTokenSource = new CancellationTokenSource();
-
             ArgumentNullException.ThrowIfNull(query);
 
-            Debug.WriteLine(query.Search);
+            var results = new List<Result>();
 
             // empty query
             if (string.IsNullOrEmpty(query.Search))
             {
-                return _maxResults >= 0 ? _results.Take(_maxResults).ToList() : _results;
+                RefreshAllTabs();
+                Log.Info($"Refresh tabs {_results.Count}.", GetType());
+                Debug.WriteLine($"Refresh tabs {_results.Count}.");
+
+                if (_maxResults >= 0)
+                {
+                    results.AddRange(_results.Take(_maxResults));
+                }
+                else
+                {
+                    results.AddRange(_results);
+                }
+
+                return results;
             }
 
-            var results = new List<Result>();
-
-            // Debug.WriteLine($"#results: {_results.Count}");
             foreach (var r in _results)
             {
                 // int score = StringMatcher.FuzzySearch(query.Search, r.Title).Score;
@@ -111,7 +108,7 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch
 
             results.Sort((x, y) => y.Score.CompareTo(x.Score));
 
-            return _maxResults >= 0 ? results.Take(_maxResults).ToList() : _results;
+            return _maxResults >= 0 ? results.Take(_maxResults).ToList() : results.ToList();
         }
 
         private static bool ContainsChineseCharacters(string text)
@@ -155,7 +152,7 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch
         }
 
         private List<IBrowserManager> _managers;
-        private List<Result> _results;
+        private List<Result> _results = new();
 
         public void Init(PluginInitContext context)
         {
@@ -168,12 +165,14 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch
                 _managers.Add(BrowserManagerFactory.CreateManager(browserType));
             }
 
-            Task.Run(UpdateCacheLoop);
+            Log.Info("Initialized BrowserTabSearch", GetType());
+
+            // Task.Run(UpdateCacheLoop);
         }
 
         private void RefreshAllTabs()
         {
-            _results = new List<Result>();
+            _results.Clear();
             foreach (var manager in _managers)
             {
                 if (manager != null)
@@ -267,7 +266,6 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch
                     _context.API.ThemeChanged -= OnThemeChanged;
                 }
 
-                _cancellationTokenSource?.Dispose();
                 _disposed = true;
             }
         }
