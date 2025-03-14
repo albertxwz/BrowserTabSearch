@@ -4,7 +4,7 @@
     "IsGlobal": false,
     "Name": "BrowserTabSearch",
     "Author": "albertxwz",
-    "Version": "1.0.2",
+    "Version": "1.0.3",
     "Language": "csharp",
     "Website": "https://github.com/albertxwz/BrowserTabSearch",
     "ExecuteFileName": "Community.PowerToys.Run.Plugin.BrowserTabSearch.dll",

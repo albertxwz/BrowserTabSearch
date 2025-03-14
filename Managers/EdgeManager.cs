@@ -36,8 +36,13 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch.Managers
                         new PropertyCondition(AutomationElement.ClassNameProperty, "EdgeTab"));
 
                     AutomationElementCollection tabBars = element.FindAll(
-                        TreeScope.Descendants, new PropertyCondition(AutomationElement.NameProperty, "Tab bar"));
+                        TreeScope.Descendants,
+                        new OrCondition(
+                            new PropertyCondition(AutomationElement.ClassNameProperty, "EdgeVerticalTabContainerView"),
+                            new PropertyCondition(AutomationElement.ClassNameProperty, "EdgeTabStripRegionView")));
 
+                    Log.Info($"Find Edge Browser Tab Bars: {tabBars.Count}\n", GetType());
+                    Debug.WriteLine($"Find Edge Browser Tab Bars: {tabBars.Count}");
                     List<AutomationElement> tabElements = new();
                     foreach (AutomationElement tabBar in tabBars)
                     {

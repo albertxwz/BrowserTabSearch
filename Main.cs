@@ -77,7 +77,8 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch
             // empty query
             if (string.IsNullOrEmpty(query.Search))
             {
-                RefreshAllTabs();
+                // RefreshAllTabs();
+                _results = GetAllTabs();
                 Log.Info($"Refresh tabs {_results.Count}.", GetType());
                 Debug.WriteLine($"Refresh tabs {_results.Count}.");
 
@@ -170,9 +171,9 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch
             // Task.Run(UpdateCacheLoop);
         }
 
-        private void RefreshAllTabs()
+        private List<Result> GetAllTabs()
         {
-            _results.Clear();
+            List<Result> results = new();
             foreach (var manager in _managers)
             {
                 if (manager != null)
@@ -180,7 +181,7 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch
                     var tabs = manager.GetAllTabs();
                     foreach (var tab in tabs)
                     {
-                        _results.Add(new Result
+                        results.Add(new Result
                         {
                             Title = tab.TabElement.Current.Name,
                             SubTitle = string.Empty,
@@ -197,16 +198,7 @@ namespace Community.PowerToys.Run.Plugin.BrowserTabSearch
                 }
             }
 
-              // Debug.WriteLine(_results.Count);
-        }
-
-        public async Task UpdateCacheLoop()
-        {
-            while (true)
-            {
-                RefreshAllTabs();
-                await Task.Delay(1000);
-            }
+            return results;
         }
 
         public string GetTranslatedPluginTitle()
